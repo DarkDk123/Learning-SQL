@@ -92,6 +92,8 @@ FROM power_level_table -- Using that alias here, for a clean-readable syntax.
 WHERE power_level >= 15;
 ```
 
+<img src="./data/CTEs_Vs_Subqueries.png" height=400px />
+
 - **CTE Benefits:** 
   - Provide a cleaner look.
   - Reusability.
