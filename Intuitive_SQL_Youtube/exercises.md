@@ -338,3 +338,527 @@ We'll complete the exercises there, as the following order!
     FROM all_bookings
     WHERE cost > 30;
     ```
+
+### Aggregations - Part 1
+
+21. Count the number of facilities 
+
+    > For our first foray into aggregates, we're going to stick to something simple. We want to know how many facilities exist - simply produce a total count. 
+
+
+
+    ```sql
+    SELECT COUNT(*)
+    FROM cd.facilities;
+    ```
+
+
+22. Count the number of expensive facilities
+
+    > Produce a count of the number of facilities that have a cost to guests of 10 or more. 
+
+    ```sql
+    SELECT
+    	COUNT(*)
+    FROM
+    	cd.facilities
+    WHERE
+    	guestcost >= 10;
+    ```
+
+23. Count the number of recommendations each member makes. 
+
+    > Produce a count of the number of recommendations each member has made. Order by member ID.
+
+    ```sql
+
+    SELECT
+	    ref.memid AS recommendedBy,
+    	COUNT(*) as "count"
+    FROM
+    	cd.members mems JOIN
+    	cd.members ref
+    	ON mems.recommendedby = ref.memid
+    GROUP BY
+    	ref.memid
+    ORDER BY
+    	recommendedBy;
+    
+    -- Joining isn't required, we can also group by recommendedBy only, while dropping NULL rows!
+    ```
+
+24. List the total slots booked per facility
+
+    > Produce a list of the total number of slots booked per facility. For now, just produce an output table consisting of facility id and slots, sorted by facility id.
+
+    ```sql
+    SELECT
+    	facid,
+    	SUM(slots) AS "Total Slots"
+    FROM
+    	cd.bookings
+    GROUP BY
+    	facid
+    ORDER BY
+    	facid;
+    ```
+
+25. List the total slots booked per facility in a given month.
+
+    > Produce a list of the total number of slots booked per facility in the month of September 2012. Produce an output table consisting of facility id and slots, sorted by the number of slots. 
+
+    ```sql
+    SELECT
+     	facid,
+     	SUM(slots) AS "Total Slots"
+     FROM
+     	cd.bookings
+     WHERE
+     	TO_CHAR(starttime, 'YYYY-MM') = '2012-09'
+     GROUP BY
+     	facid
+     ORDER BY "Total Slots";
+    ```
+
+26. List the total slots booked per facility per month
+
+    > Produce a list of the total number of slots booked per facility per month in the year of 2012. Produce an output table consisting of facility id and slots, sorted by the id and month. 
+
+    ```sql
+    SELECT
+    	facid,
+    	EXTRACT(MONTH FROM starttime) AS month,
+    	SUM(slots) AS "Total Slots"
+    FROM
+    	cd.bookings
+    WHERE
+    	EXTRACT(YEAR FROM starttime) = 2012
+    GROUP BY
+    	facid, EXTRACT(MONTH FROM starttime) -- OR "month"
+    ORDER BY
+    	facid, month;
+
+    ```
+
+27. Find the count of members who have made at least one booking
+
+    >  Find the total number of members (including guests) who have made at least one booking. 
+
+    ```sql
+    SELECT
+    	COUNT(DISTINCT memid)
+    FROM
+    	cd.bookings;
+
+    ```
+
+28. List facilities with more than 1000 slots booked
+
+    >  Produce a list of facilities with more than 1000 slots booked. Produce an output table consisting of facility id and slots, sorted by facility id. 
+
+    ```sql
+    SELECT
+    	facid,
+    	SUM(slots) as "Total Slots"
+    FROM
+    	cd.bookings
+    GROUP BY
+    	facid
+    HAVING
+    	SUM(slots) > 1000
+    ORDER BY
+    	facid;
+
+    ```
+
+29. Find the total revenue of each facility
+
+    > Produce a list of facilities along with their total revenue. The output table should consist of facility name and revenue, sorted by revenue. Remember that there's a different cost for guests and members! 
+
+    ```sql
+    SELECT
+    	fc.name AS name, -- Selectable because it's as unique as facid!
+    	SUM(
+    	  bs.slots * (
+    		CASE
+    			WHEN bs.memid = 0 THEN fc.guestcost
+    			ELSE fc.membercost
+    		END
+    	    )
+    	) AS revenue
+    FROM
+    	cd.bookings bs JOIN
+    	cd.facilities fc
+    	ON bs.facid = fc.facid
+    GROUP BY
+    	fc.facid -- fc.name is also applicable!
+    ORDER BY
+    	revenue;
+    ```
+
+30. Find facilities with a total revenue less than 1000
+
+    > Produce a list of facilities with a total revenue less than 1000. Produce an output table consisting of facility name and revenue, sorted by revenue. Remember that there's a different cost for guests and members! 
+
+    ```sql
+    -- Create a Common Table!
+    WITH revenues AS (
+       SELECT
+        	fc.name AS name, -- Selectable because it's as unique as facid!
+        	SUM(
+        	  bs.slots * (
+        		CASE
+        			WHEN bs.memid = 0 THEN fc.guestcost
+        			ELSE fc.membercost
+        		END
+        		)
+        	) AS revenue
+        FROM
+        	cd.bookings bs JOIN
+        	cd.facilities fc
+        	ON bs.facid = fc.facid
+        GROUP BY
+        	fc.facid -- fc.name is also applicable!
+        ORDER BY
+        	revenue
+    )
+
+    -- Selecting from revenues.
+    SELECT * FROM revenues WHERE revenue < 1000;
+    ```
+
+31. Output the facility id that has the highest number of slots booked
+
+    > Output the facility id that has the highest number of slots booked. For bonus points, try a version without a LIMIT clause. This version will probably look messy! 
+
+    ```sql
+    SELECT
+    	facid, SUM(slots) AS "Total Slots"
+    FROM
+    	cd.bookings
+    GROUP BY
+    	facid
+    ORDER BY
+    	"Total Slots" DESC
+    LIMIT 1;
+
+    -- This is good, but in a tie, it gives only one result!
+    -- Now, without using `Limit` clause
+
+    WITH total_slots AS (
+      SELECT
+    	facid, SUM(slots) AS "Total Slots"
+      FROM
+    	  cd.bookings
+      GROUP BY
+    	  facid
+      ORDER BY
+    	  "Total Slots" DESC
+    )
+
+    
+    -- Querying on above table...
+    SELECT *
+    FROM total_slots
+    WHERE "Total Slots" = (SELECT MAX("Total Slots") FROM total_slots);
+    ```
+
+    `Look 👀, Just how perfect a "Common Table Expression" feels like!!`
+
+32. List the total slots booked per facility per month, part 2
+
+    > `Produce a list of the total number of slots booked per facility per month in the year of 2012.` In this version, include output rows containing totals for all months per facility, and a total for all months for all facilities. The output table should consist of facility id, month and slots, sorted by the id and month. When calculating the aggregated values for all months and all facids, return null values in the month and facid columns. 
+
+    ```sql
+    -- First answer in our mind can be concatenating multiple queries using "UNION ALL"
+    -- But, it looks complex! let's see other solutions
+
+    SELECT
+    	facid,
+    	EXTRACT(MONTH FROM starttime) AS month,
+    	SUM(slots) AS slots
+    FROM
+    	cd.bookings
+    WHERE
+    	EXTRACT(YEAR FROM starttime) = 2012
+    GROUP BY
+        -- ROLLUP is the catch, it generates multiple grouping sets.
+    	ROLLUP(facid, EXTRACT(MONTH FROM starttime)) -- OR "month"
+    ORDER BY
+    	facid, month;
+
+
+    -- I was familiar with the grouping set syntax like!
+    -- Replacing GROUP BY with this:
+    GROUP BY GROUPING SETS(
+    	(facid, EXTRACT(MONTH FROM starttime)), -- OR "month"
+      	(facid),
+      	()
+     ) -- It's equal to "ROLLUP(facid, month)"
+    ```
+
+33. List the total hours booked per named facility 
+
+    > Produce a list of the total number of hours booked per facility, remembering that a slot lasts half an hour. The output table should consist of the facility id, name, and hours booked, sorted by facility id. Try formatting the hours to two decimal places. 
+
+    ```sql
+    
+    SELECT
+    	fc.facid, fc.name,
+    	ROUND(SUM(slots)/2.0, 2) AS "Total Hours"
+    FROM
+    	cd.bookings bs JOIN
+    	cd.facilities fc
+    	ON bs.facid = fc.facid
+    GROUP BY
+    	fc.facid, fc.name
+    ORDER BY
+    	fc.facid;
+
+    ```
+
+34. List each member's first booking after September 1st 2012
+
+    > Produce a list of each member name, id, and their first booking after September 1st 2012. Order by member ID. 
+
+    ```sql
+    SELECT
+    	mems.surname,
+    	mems.firstname,
+    	mems.memid,
+    	MIN(bs.starttime) AS starttime
+    FROM
+    	cd.members mems JOIN
+    	cd.bookings bs
+    	ON mems.memid = bs.memid
+    WHERE
+    	bs.starttime > '2012-09-01'
+    GROUP BY
+    	mems.memid, mems.surname, mems.firstname -- These are equally common!
+    ORDER BY
+    	memid;
+    ```
+
+### Aggregations - Part 2
+
+35. Produce a list of member names, with each row containing the total member count 
+
+    > Produce a list of member names, with each row containing the total member count. Order by join date, and include guest members
+
+    ```sql
+    SELECT
+    	COUNT(*) OVER(),
+    	firstname,
+    	surname
+
+    FROM
+    	cd.members
+    ORDER BY
+    	joindate;
+    ```
+
+36. Produce a numbered list of members
+
+    > Produce a monotonically increasing numbered list of members (including guests), ordered by their date of joining. Remember that member IDs are not guaranteed to be sequential. 
+
+    ```sql
+    SELECT
+    	ROW_NUMBER() OVER(ORDER BY joindate),
+    	firstname, surname
+    FROM
+    	cd.members
+    ORDER BY
+    	joindate;
+    ```
+
+37. Output the facility id that has the highest number of slots booked, again 
+
+    > Output the facility id that has the highest number of slots booked. Ensure that in the event of a tie, all tieing results get output.
+
+    ```sql
+    -- Using the same solution from above (Exercise:31)
+    WITH total_slots AS (
+      SELECT
+    	facid, SUM(slots) AS "Total Slots"
+      FROM
+    	  cd.bookings
+      GROUP BY
+    	  facid
+      ORDER BY
+    	  "Total Slots" DESC
+    )
+
+
+    -- Querying on above table...
+    SELECT *
+    FROM total_slots
+    WHERE "Total Slots" = (SELECT MAX("Total Slots") FROM total_slots);
+    ```
+
+38. Rank members by (rounded) hours used.
+
+    > Produce a list of members (including guests), along with the number of hours they've booked in facilities, rounded to the nearest ten hours. Rank them by this rounded figure, producing output of first name, surname, rounded hours, rank. Sort by rank, surname, and first name. 
+
+    ```sql
+    SELECT
+    	mems.firstname, mems.surname,
+    	ROUND(SUM(bs.slots)/2, -1) AS hours,
+    	RANK() OVER(ORDER BY ROUND(SUM(bs.slots)/2, -1) DESC) AS rank -- Rank rows!
+    	
+    FROM
+    	cd.members mems JOIN
+    	cd.bookings bs
+    	ON mems.memid = bs.memid
+    GROUP BY
+    	mems.firstname, mems.surname
+    ORDER BY
+    	rank, surname, firstname;
+    ```
+
+39. Find the top three revenue generating facilities
+
+    > Produce a list of the top three revenue generating facilities (including ties). Output facility name and rank, sorted by rank and facility name. 
+
+    ```sql
+    WITH top_facilities AS (
+      SELECT
+    	fc.name AS name,
+    	RANK() OVER(ORDER BY SUM(slots * 
+    							 CASE
+    							 	WHEN bs.memid=0 THEN fc.guestcost
+    							 	ELSE fc.membercost
+    							 END
+    							) DESC) AS rank
+    	  
+      FROM
+    	  cd.facilities fc JOIN
+    	  cd.bookings bs
+    	  ON fc.facid = bs.facid
+      GROUP BY
+    	  fc.name
+      ORDER BY
+    	  rank, name
+    )
+
+
+    -- Filtering Top 3 facilities
+    SELECT * FROM top_facilities WHERE rank <= 3;
+    ```
+
+40. Classify facilities by value
+
+    > Classify facilities into equally sized groups of high, average, and low based on their revenue. Order by classification and facility name. 
+
+    ```sql
+    WITH fac_class AS (
+      SELECT
+    	fc.name,
+    	NTILE(3) OVER(ORDER BY SUM(slots * 
+        							 CASE
+        							 	WHEN bs.memid=0 THEN fc.guestcost
+        							 	ELSE fc.membercost
+        							 END
+        							) DESC) AS revenue
+      FROM
+    	  cd.facilities fc JOIN
+    	  cd.bookings bs
+    	  ON fc.facid = bs.facid
+      
+      GROUP BY
+    	  fc.name
+      ORDER BY
+    	  revenue, name
+    )
+
+
+    SELECT
+    	name,
+    	CASE
+    		WHEN revenue = 1 THEN 'high'
+    		WHEN revenue = 2 THEN 'average'
+    		ELSE 'low'
+    	END AS revenue
+
+    FROM
+    	fac_class;
+    ```
+
+41. Calculate the payback time for each facility
+
+    > Based on the 3 complete months of data so far, calculate the amount of time each facility will take to repay its cost of ownership. Remember to take into account ongoing monthly maintenance. Output facility name and payback time in months, order by facility name. Don't worry about differences in month lengths, we're only looking for a rough value here! 
+
+    ```sql
+    -- monthly_revenue = (slots*cost) For the Month
+    -- monthly_meaintenance = cost to keep it running
+    -- initial_outlay = Cost of ownership for each facility
+    -- monthly_profit = monthly_revenue - monthly_maintenance
+
+    -- payback_time = initial_outlay/monthly_profit
+
+
+    -- Let's start with profit statistics
+    WITH profit_data AS (
+      SELECT
+    	fc.facid,
+    	fc.name,
+    	SUM(bs.slots *
+    	  	 CASE
+    	  	 	 WHEN bs.memid=0 THEN fc.guestcost
+    		 	 ELSE fc.membercost
+    	  	 END)/COUNT(DISTINCT EXTRACT(MONTH FROM starttime)) - monthlymaintenance AS avg_monthly_profit,
+    	COUNT(DISTINCT EXTRACT(MONTH FROM starttime)) AS total_months,
+    	fc.initialoutlay AS buy_price
+      FROM
+    	  cd.bookings bs JOIN
+    	  cd.facilities fc
+    	  ON bs.facid = fc.facid
+      WHERE
+      	EXTRACT(YEAR FROM starttime) = 2012 -- dropping 2013
+      GROUP BY
+    	  fc.facid, fc.name, fc.initialoutlay
+    )
+
+
+    -- Get what we need!
+    SELECT
+    	name,
+    	buy_price/avg_monthly_profit AS months
+    FROM
+    	profit_data
+    ORDER BY
+    	name;
+
+
+    ```
+
+42. Calculate a rolling average of total revenue
+
+    > For each day in August 2012, calculate a rolling average of total revenue over the previous 15 days. Output should contain date and revenue columns, sorted by the date. Remember to account for the possibility of a day having zero revenue. This one's a bit tough, so don't be afraid to check out the hint! 
+
+    ```sql
+    WITH rolling_avg_revenue AS (
+      SELECT
+    	DATE(starttime) as date,
+      	
+      -- Rolling AVG revenue over 15 rows window!
+    	AVG(SUM(bs.slots *
+        	  	 CASE
+        	  	 	 WHEN bs.memid=0 THEN fc.guestcost
+        		 	 ELSE fc.membercost
+        	  	 END)) OVER(ORDER BY DATE(starttime)
+    						ROWS BETWEEN 14 PRECEDING AND CURRENT ROW
+    					   ) as revenue
+      FROM
+    	  cd.bookings bs JOIN
+    	  cd.facilities fc
+    	  ON bs.facid = fc.facid
+      GROUP BY
+    	  DATE(starttime)
+    )
+
+
+    -- Filter for August 2012
+    SELECT *
+    FROM rolling_avg_revenue
+    WHERE TO_CHAR(date, 'YYYY-MM') = '2012-08';
+    ```
