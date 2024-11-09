@@ -76,3 +76,66 @@ WHERE
 ```
 
 
+#### Questions on `Basic Joins`
+
+## 6. [Replace Employee ID With The Unique Identifier](https://leetcode.com/problems/replace-employee-id-with-the-unique-identifier/description/?envType=study-plan-v2&envId=top-sql-50)
+
+
+Performing a Left Join to get all employees regardless of their Unique Ids.
+
+```sql
+SELECT
+    unique_id,
+    name
+-- Needs left join to get all the employees!
+FROM
+    Employees e LEFT JOIN EmployeeUNI eu
+    ON e.id = eu.id;
+```
+
+## 7. [Product Sales Analysis - I](https://leetcode.com/problems/product-sales-analysis-i/description/?envType=study-plan-v2&envId=top-sql-50)
+
+Here, we need to perform an Inner Join to Combine the data of both tables!
+
+```sql
+SELECT
+    product_name, year, price
+FROM
+    Sales s INNER JOIN Product p
+    USING(product_id); -- Can use `USING` when col name is same
+    -- ON s.product_id = p.product_id; 
+```
+
+## 8. [Customers Who Ran away](https://leetcode.com/problems/customer-who-visited-but-did-not-make-any-transactions/?envType=study-plan-v2&envId=top-sql-50)
+
+😁 To find the customers who visited but didn't make any transaction.
+
+**Solution 1:** With Joining the tables as **Left Exclusion Join**
+
+```sql
+SELECT
+    customer_id,
+    COUNT(*) AS count_no_trans
+FROM
+    Visits v LEFT JOIN Transactions t
+    ON v.visit_id = t.visit_id
+WHERE
+    t.visit_id IS NULL -- Filter rows (Exclusive Left JOIN)
+GROUP BY
+    customer_id; -- Group to count visits!
+```
+
+**Solution 2:** Using a *subquery* to check ***non-membership*** of visit ids!
+
+```sql
+SELECT
+    customer_id,
+    COUNT(*) AS count_no_trans
+FROM
+    Visits
+WHERE
+    -- Filter visits not having any transactions!
+    visit_id NOT IN (SELECT visit_id FROM transactions)
+GROUP BY
+    customer_id;
+```
