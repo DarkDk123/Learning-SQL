@@ -139,3 +139,80 @@ WHERE
 GROUP BY
     customer_id;
 ```
+
+## 9. [Rising Temperature](https://leetcode.com/problems/rising-temperature/description/?envType=study-plan-v2&envId=top-sql-50)
+
+
+**Solution 1:** Here, we need to self join the table with itself, on a condition that gives all days along with it's exact previous days, and then by filtering days having more temperature than day before, we solved the question.
+
+
+```sql
+SELECT
+    t.id AS id
+FROM
+    Weather t JOIN Weather y
+    ON t.recordDate = (y.recordDate + 1) -- Self Join
+WHERE
+    t.temperature > y.temperature; -- Filter days!
+```
+
+**Solution 2:** We can also utilize **Common Table Expression** and **LAG** Function for calculating temperature differences!
+
+As this solution has unnecessary lengthy, still windows functions can be understood by this!!
+
+```sql
+-- Common Table Expression
+WITH temperatures AS (
+    SELECT
+        id,
+        recordDate AS tDate, -- Date to verify consecutive days
+        LAG(recordDate) OVER(ORDER BY recordDate) AS yDate,
+        temperature AS today,
+        LAG(temperature) OVER(ORDER BY recordDate) AS yesterday -- Getting exact previous days
+    FROM
+        Weather
+)
+
+SELECT id
+FROM temperatures   
+WHERE today > yesterday AND tDate = yDate + 1; -- Filter data
+```
+
+## 10. [Average Time of Process per machine](https://leetcode.com/problems/average-time-of-process-per-machine/description/?envType=study-plan-v2&envId=top-sql-50)
+
+This is a problem that i struggled so long before! But now after little brainstorming i solved it!
+
+```sql
+SELECT
+    a1.machine_id,
+    -- Average of processes per machine!
+    ROUND(
+        AVG(a2.timestamp - a1.timestamp), 3
+    ) AS processing_time
+FROM
+    Activity a1 JOIN Activity a2
+    -- This is a lot
+    ON a1.machine_id = a2.machine_id AND
+    a1.process_id = a2.process_id AND
+    a1.timestamp < a2.timestamp
+GROUP BY
+    a1.machine_id;
+```
+
+I also found a very good solution by [Mathieu Soysal](https://leetcode.com/u/MathieuSoysal/), that doesn't requires to ***self join*** the table. Here's it:
+
+```sql
+SELECT
+    machine_id,
+    ROUND(
+        AVG(
+        CASE 
+            WHEN activity_type = 'start' THEN -timestamp 
+            ELSE timestamp
+        END)::decimal * 2  -- Decimal for postgreSQL & multiply by 2 to round correctly!
+        , 3) AS processing_time
+FROM
+    Activity
+GROUP BY
+    machine_id;
+```
