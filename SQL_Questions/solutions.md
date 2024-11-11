@@ -216,3 +216,74 @@ FROM
 GROUP BY
     machine_id;
 ```
+
+## 11. [Employee Bonus](https://leetcode.com/problems/employee-bonus/description/?envType=study-plan-v2&envId=top-sql-50)
+
+Joining the table on ***empID***.
+
+```sql
+SELECT
+    name, bonus
+FROM
+    Employee LEFT JOIN Bonus
+    USING(empId) -- When col name is same!
+WHERE
+    bonus < 1000 OR bonus IS NULL;
+```
+
+## 12. [Students and Examinations](https://leetcode.com/problems/students-and-examinations/description/?envType=study-plan-v2&envId=top-sql-50)
+
+A good question 💡 again!
+
+```sql
+SELECT DISTINCT
+    s.student_id,
+    s.student_name,
+    sb.subject_name,
+    COALESCE(e.attended_exams, 0) AS attended_exams -- Fill 0 for Null values!
+FROM
+    Students s CROSS JOIN Subjects sb -- Get all subjects for each student.
+    LEFT JOIN (
+        -- Counting attendence in given exams!
+        SELECT student_id, subject_name, COUNT(*) AS attended_exams
+        FROM Examinations
+        GROUP BY student_id, subject_name
+    ) AS e
+    ON s.student_id = e.student_id AND sb.subject_name = e.subject_name
+ORDER BY
+    s.student_id, sb.subject_name;
+```
+
+Also, we can ***left join*** first, then apply ***Group By*** to count ***attended_exams***!
+
+```sql
+SELECT DISTINCT
+    s.student_id,
+    s.student_name,
+    sb.subject_name,
+    COALESCE(COUNT(e.student_id), 0) AS attended_exams -- Fill 0 for Null values!
+FROM
+    Students s CROSS JOIN Subjects sb -- Get all subjects for each student.
+    LEFT JOIN Examinations AS e
+    ON s.student_id = e.student_id AND sb.subject_name = e.subject_name
+GROUP BY
+    s.student_id, s.student_name, sb.subject_name
+ORDER BY
+    s.student_id, sb.subject_name;
+```
+
+## 13. [Managers with at Least 5 Direct Reports](https://leetcode.com/problems/managers-with-at-least-5-direct-reports/description/?envType=study-plan-v2&envId=top-sql-50)
+
+This needs a `self join` to get all the employees of all the Managers, then filtering them based on total Employees!
+
+```sql
+SELECT
+    m.name
+FROM
+    Employee e JOIN Employee m
+    ON e.managerId = m.id -- Self join to get employees-manager pairs
+GROUP BY
+    m.id, m.name
+HAVING
+    COUNT(e.id) >= 5; -- Managers with at least 5 employees.
+```
