@@ -392,6 +392,8 @@ Grouping by `contest_id` after joining the tables on `user_id`, Then calculating
 SELECT
     contest_id,
     ROUND(
+        -- This correlated subquery is expensive,
+        -- instead join total users from users table (Do yourself!)
         COUNT(r.user_id) / (SELECT COUNT(*) * 1.0 FROM Users) * 100, 2
     ) AS percentage
 FROM
