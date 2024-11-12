@@ -287,3 +287,118 @@ GROUP BY
 HAVING
     COUNT(e.id) >= 5; -- Managers with at least 5 employees.
 ```
+
+## 14. [Confirmation Rate](https://leetcode.com/problems/confirmation-rate/description/?envType=study-plan-v2&envId=top-sql-50)
+
+The solution i came up with! The round logic may be unintuitive!!
+
+```sql
+-- Write your PostgreSQL query statement below
+
+SELECT
+    s.user_id,
+    -- Doing average manually, i could use Average function!
+    ROUND(SUM(CASE
+        WHEN action = 'confirmed' THEN 1 ELSE 0
+    END) / (COUNT(COALESCE(action, ''))::DECIMAL), 2) AS confirmation_rate
+FROM
+    Signups s LEFT JOIN Confirmations c
+    ON s.user_id = c.user_id
+GROUP BY
+    s.user_id;
+```
+
+Solution 
+
+```sql
+-- Write your PostgreSQL query statement below
+
+SELECT
+    s.user_id,
+    -- Little short, As average function can do the work!!
+    ROUND(
+        AVG(CASE WHEN action = 'confirmed' THEN 1 ELSE 0 END), 2
+    )AS confirmation_rate
+FROM
+    Signups s LEFT JOIN Confirmations c
+    ON s.user_id = c.user_id
+GROUP BY
+    s.user_id;
+
+```
+
+#### Basic `Aggregate Functions`
+
+## 15. [Not Boring Movies](https://leetcode.com/problems/not-boring-movies/?envType=study-plan-v2&envId=top-sql-50)
+
+Just a filter condition can do the work here!
+
+```sql
+SELECT
+    *
+FROM
+    Cinema
+WHERE
+    id % 2 <> 0 AND description <> 'boring' -- Filter
+ORDER BY
+    rating DESC;
+```
+
+## 16. [Average Selling Price](https://leetcode.com/problems/average-selling-price/?envType=study-plan-v2&envId=top-sql-50)
+
+There is just a **quick logic** in how we join the tables, and then how to calculate the corresponding Average Price of each product.
+
+I got the solution by **try-n-error**, but simply aggregating on each groups of `product_id`, it's solved !
+
+```sql
+-- Write your PostgreSQL query statement below
+SELECT
+    p.product_id,
+    COALESCE(ROUND(
+        -- Average price of products
+        SUM(price * units)/ SUM(units)::DECIMAL, 2
+    ), 0) AS average_price
+FROM
+    Prices p LEFT JOIN UnitsSold u
+    ON p.product_id = u.product_id AND
+    u.purchase_date BETWEEN p.start_date AND p.end_date
+GROUP BY
+    p.product_id;
+```
+
+## 17. [Project Employees - I](https://leetcode.com/problems/project-employees-i/description/?envType=study-plan-v2&envId=top-sql-50)
+
+Performing Rounded Average of `experience_years` over each ***project groups***.
+
+```sql
+SELECT
+    project_id,
+    ROUND(
+        AVG(experience_years), 2 -- Rounded Average of experience.
+    ) AS average_years
+FROM
+    Project p JOIN Employee e
+    USING(employee_id) -- When col name is same!
+GROUP BY
+    project_id;
+```
+
+
+## 18. [Percentage of Users Attended a Contest](https://leetcode.com/problems/percentage-of-users-attended-a-contest/description/?envType=study-plan-v2&envId=top-sql-50)
+
+Grouping by `contest_id` after joining the tables on `user_id`, Then calculating the percentage of users who attended the contest.
+
+```sql
+SELECT
+    contest_id,
+    ROUND(
+        COUNT(r.user_id) / (SELECT COUNT(*) * 1.0 FROM Users) * 100, 2
+    ) AS percentage
+FROM
+    Users u JOIN Register r
+    USING(user_id)
+GROUP BY
+    contest_id
+ORDER BY
+    percentage DESC, contest_id;
+```
