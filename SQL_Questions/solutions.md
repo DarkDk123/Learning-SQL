@@ -404,3 +404,44 @@ GROUP BY
 ORDER BY
     percentage DESC, contest_id;
 ```
+
+## 19. [Queries Quality & Percentage](https://leetcode.com/problems/queries-quality-and-percentage/?envType=study-plan-v2&envId=top-sql-50)
+
+
+Simple Group by `query_name` is enough for applying aggregate functions.
+
+```sql
+-- PostgreSQL
+
+SELECT
+    query_name,
+    ROUND(AVG(rating/position::DECIMAL), 2) AS quality,
+    ROUND(AVG(CASE WHEN (rating < 3) THEN 1 ELSE 0 END) * 100, 2) AS poor_query_percentage
+FROM
+    Queriess!
+WHERE
+    query_name IS NOT NULL -- Filtering Null query names!
+GROUP BY
+    query_name;
+```
+
+## 20. [Monthly Transactions - I](https://leetcode.com/problems/monthly-transactions-i/description/?envType=study-plan-v2&envId=top-sql-50)
+
+I prefer to look out on docs for **database specific functions** at the time of need, instead of trying to remember them all.
+
+Here, used a few aggregations over the group.
+
+```sql
+SELECT
+    TO_CHAR(trans_date, 'YYYY-MM') AS month, -- This func should be explored in docs.
+    country,
+    COUNT(id) AS trans_count,
+    COUNT(CASE WHEN state='approved' THEN 1 END) AS approved_count,
+    SUM(amount) AS trans_total_amount,
+    COALESCE(SUM(CASE WHEN state='approved' THEN amount END), 0) AS approved_total_amount
+FROM
+    Transactions
+GROUP BY
+    country, month; -- We can use alias here in some SQLs
+
+```
