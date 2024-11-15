@@ -474,3 +474,32 @@ FROM
 WHERE
     order_date = first_order_date; -- First Orders!
 ```
+
+
+## 22. [Game Play Analysis - IV](https://leetcode.com/problems/game-play-analysis-iv/description/?envType=study-plan-v2&envId=top-sql-50)
+
+Here, getting all users **first log_in date**, then checking how many consecutive \
+login dates are there for distinct users. Finally **rounding the fraction**!
+
+```sql
+-- Get first log in of every user!!
+WITH first_time AS (
+    SELECT
+        player_id,
+        MIN(event_date) AS first_log_in
+    FROM
+        Activity
+    GROUP BY
+        player_id
+)
+
+-- Fraction of atleast first 2 consecutive plays!
+SELECT
+    ROUND(
+        COUNT(*) FILTER(WHERE a.event_date = f.first_log_in + 1) / 
+        COUNT(DISTINCT a.player_id)::NUMERIC, 2
+    ) AS fraction
+FROM
+    Activity a JOIN first_time f
+    ON a.player_id = f.player_id;
+```
