@@ -445,3 +445,32 @@ GROUP BY
     country, month; -- We can use alias here in some SQLs
 
 ```
+
+## 21. [Immediate Food Delivery - II](https://leetcode.com/problems/immediate-food-delivery-ii/?envType=study-plan-v2&envId=top-sql-50)
+
+First, using common table expression to get `order_type` and `first_order_date`, then calculating **percentage** of **Immediate** orders.
+
+```sql
+WITH immediate_orders AS (
+    SELECT
+        customer_id,
+        order_date,
+        CASE
+            WHEN order_date=customer_pref_delivery_date THEN 'immediate' ELSE 'scheduled'
+        END AS order_type,
+        -- First order per customer!
+        MIN(order_date) OVER(PARTITION BY customer_id) AS first_order_date
+    FROM    
+        Delivery
+)
+
+SELECT
+    ROUND(
+        -- Percentage of immediate orders
+        AVG(CASE WHEN (order_type='immediate') THEN 1 ELSE 0 END) * 100, 2
+    ) AS immediate_percentage
+FROM
+    immediate_orders
+WHERE
+    order_date = first_order_date; -- First Orders!
+```
