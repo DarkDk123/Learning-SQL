@@ -503,3 +503,42 @@ FROM
     Activity a JOIN first_time f
     ON a.player_id = f.player_id;
 ```
+
+#### Questions on `Sorting & Grouping`
+
+## 23. [Number of Unique subjects Taught by Each Teacher](https://leetcode.com/problems/number-of-unique-subjects-taught-by-each-teacher/description/?envType=study-plan-v2&envId=top-sql-50)
+
+
+```sql
+-- Simple Group By is enough here.
+
+SELECT
+    teacher_id,
+    COUNT(DISTINCT subject_id) AS cnt
+FROM
+    Teacher
+GROUP BY
+    teacher_id;
+```
+
+## 24. [User Activity for the past 30 days - I](https://leetcode.com/problems/user-activity-for-the-past-30-days-i/description/?envType=study-plan-v2&envId=top-sql-50)
+
+Filtering by dates first, to get Activities under 30 days, \
+then grouping based on dates, that gives us active users each day!!
+
+```sql
+-- Write your PostgreSQL query statement below
+SELECT
+    activity_date AS day,
+    COUNT(DISTINCT user_id) AS active_users
+FROM
+    Activity
+WHERE
+    -- All activities, under 30 days...
+    DATE('2019-07-27') - activity_date BETWEEN 0 AND 29
+GROUP BY
+    activity_date
+ORDER BY
+    day;
+```
+
