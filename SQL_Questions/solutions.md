@@ -542,3 +542,115 @@ ORDER BY
     day;
 ```
 
+## 25. [Product Sales Analysis - III](https://leetcode.com/problems/product-sales-analysis-iii/description/?envType=study-plan-v2&envId=top-sql-50)
+
+**Solution 1:** Finding first_year for every product, then joining with `Sales` Table, to get the answer. ***(my first solution)***
+
+```sql
+SELECT
+    s.product_id,
+    f.first_year,
+    s.quantity,
+    s.price
+FROM
+    (
+        -- Subquery to fetch first_year of every Product
+        SELECT DISTINCT
+            product_id,
+            MIN(year) AS first_year
+        FROM
+            Sales
+        GROUP BY
+            product_id
+    ) AS f JOIN Sales AS s
+    ON f.product_id=s.product_id AND f.first_year = s.year;
+```
+
+**Solution 2:** Without Joining, we can filter pairs in Subqueries using `WHERE + IN`. This solution is easy, but slower to execute!
+
+```sql
+SELECT
+    product_id,
+    year AS first_year,
+    quantity,
+    price
+FROM
+    Sales
+WHERE
+    (product_id, year) IN (
+        -- Subquery to fetch first_year of every Product
+        SELECT DISTINCT
+            product_id,
+            MIN(year) AS first_year
+        FROM
+            Sales
+        GROUP BY
+            product_id
+    )
+```
+
+## 26. [Classes More Than 5 Students](https://leetcode.com/problems/classes-more-than-5-students/description/?envType=study-plan-v2&envId=top-sql-50)
+
+Filtering Groups with `HAVING` Clause.
+
+```sql
+SELECT
+    class
+FROM
+    Courses
+GROUP BY
+    class
+HAVING
+    COUNT(student) >= 5; -- Filtering Groups (Classes)
+```
+
+
+## 27. [Find Followers Count](https://leetcode.com/problems/find-followers-count/description/?envType=study-plan-v2&envId=top-sql-50)
+
+Simply, Grouping and Ordering.
+
+```sql
+SELECT
+    user_id,
+    COUNT(follower_id) AS followers_count
+FROM
+    Followers
+GROUP BY
+    user_id
+ORDER BY
+    user_id;
+```
+
+## 28. [Biggest Single Number](https://leetcode.com/problems/biggest-single-number/description/?envType=study-plan-v2&envId=top-sql-50)
+
+```sql
+SELECT
+    MAX(num) AS num
+FROM
+    (
+        SELECT
+        num
+        FROM
+            MyNumbers
+        GROUP BY
+            num
+        HAVING
+            COUNT(*) = 1
+    ) AS t;
+```
+
+## 29. [Customers Who Bought All Products](https://leetcode.com/problems/customers-who-bought-all-products/?envType=study-plan-v2&envId=top-sql-50)
+
+
+```sql
+-- Write your PostgreSQL query statement below
+
+SELECT
+    customer_id
+FROM
+    Customer
+GROUP BY
+    customer_id
+HAVING
+    COUNT(DISTINCT product_key) = (SELECT COUNT(*) FROM Product)
+```
