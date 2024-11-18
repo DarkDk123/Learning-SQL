@@ -654,3 +654,72 @@ GROUP BY
 HAVING
     COUNT(DISTINCT product_key) = (SELECT COUNT(*) FROM Product)
 ```
+
+#### Questions on `Advanced Select and Joins`
+
+## 30. [The Number of Employees Which Report to Each Employee](https://leetcode.com/problems/the-number-of-employees-which-report-to-each-employee/?envType=study-plan-v2&envId=top-sql-50)
+
+Simply Joining the Table with itself `(Self Join)`, grouping it on managers, then selecting the aggregated results !!
+
+```sql
+SELECT
+    m.employee_id,
+    m.name,
+    -- Aggregations on manager's employees.
+    COUNT(e.employee_id) AS reports_count,
+    ROUND(AVG(e.age)) AS average_age
+FROM
+    Employees e JOIN Employees m
+    ON e.reports_to = m.employee_id
+GROUP BY
+    m.employee_id, m.name -- Grouping on both
+ORDER BY
+    1;f
+```
+
+## 31. [Primary Department for Each Employee](https://leetcode.com/problems/primary-department-for-each-employee/description/?envType=study-plan-v2&envId=top-sql-50)
+
+**Solution 1:** Using UNION ALL, a simple solution.
+
+```sql
+SELECT employee_id, department_id
+FROM Employee
+WHERE primary_flag = 'Y'
+
+UNION ALL
+
+SELECT employee_id, SUM(department_id)
+FROM Employee
+GROUP BY employee_id
+HAVING COUNT(*) = 1;
+```
+
+**Solution 2:** But we need to learn Advanced Joins, so let's solve using `Joins`
+
+```sql
+SELECT employee_id, department_id
+FROM
+    Employee e1 JOIN (
+        -- Joining department counts!
+        SELECT employee_id, COUNT(*) AS cnt
+        FROM Employee
+        GROUP BY employee_id
+    ) USING(employee_id)
+WHERE
+    primary_flag = 'Y' OR cnt=1;
+```
+
+## 32. [Triangle Judgement](https://leetcode.com/problems/triangle-judgement/description/?envType=study-plan-v2&envId=top-sql-50)
+
+Using the **Triangle Inequality Theorem**, checking sum of any ***2 sides exceeds*** the 3rd side.
+
+```sql
+SELECT
+    *,
+    CASE 
+        WHEN x+y+z - GREATEST(x, y, z) > GREATEST(x,y,z) THEN 'Yes' ELSE 'No' 
+    END AS triangle
+FROM triangle;
+``` 
+
+
