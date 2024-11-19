@@ -723,3 +723,135 @@ FROM triangle;
 ``` 
 
 
+## 33. [Consecutive Numbers](https://leetcode.com/problems/consecutive-numbers/?envType=study-plan-v2&envId=top-sql-50)
+
+**Solution 1:** Joining the table with itself thrice on consecutive id's,
+then selecting distinct. This isn't an efficient solution cause of joins!!
+
+```sql
+-- Joining table with itself three times...
+-- Not so efficient...
+
+SELECT DISTINCT
+    l1.num AS ConsecutiveNums
+FROM
+    Logs l1 JOIN Logs l2 ON l1.id+1 = l2.id 
+    JOIN Logs l3 ON l2.id +1 = l3.id
+WHERE
+    l1.num = l2.num AND l2.num = l3.num;
+
+```
+
+**Solution 2 :** Using `Window Functions` to find consecutive numbers.
+
+```sql
+-- Using CTE, calculate previous two nums
+WITH consecutive AS (
+    SELECT
+        id,
+        num,
+        LAG(num, 1) OVER(ORDER BY id) AS l1,
+        LAG(num, 2) OVER(ORDER BY id) AS l2
+    FROM
+        Logs
+)
+
+-- Select Distinct Consecutive Numbers
+SELECT DISTINCT
+    num AS ConsecutiveNums
+FROM
+    consecutive
+WHERE
+    num = l1 and l1 = l2;
+```
+
+## 34. [Product Price at a Given Date](https://leetcode.com/problems/product-price-at-a-given-date/description/?envType=study-plan-v2&envId=top-sql-50)
+
+
+```sql
+-- Write your PostgreSQL query statement below
+WITH mins AS (
+    SELECT
+        product_id, MAX(change_date) AS "date"
+    FROM
+        Products p1
+    WHERE
+        change_date <= '2019-08-16'
+    GROUP BY
+        product_id
+)
+
+SELECT DISTINCT
+    p1.product_id,
+    CASE
+        WHEN p2.date IS NULL THEN 10 ELSE p1.new_price
+    END AS price
+FROM
+    Products p1 LEFT JOIN mins p2
+    ON p1.product_id = p2.product_id
+WHERE
+    p2.date = p1.change_date OR
+    p2.date IS NULL;
+```
+
+## 35. [Last Person to Fit in the Bus](https://leetcode.com/problems/last-person-to-fit-in-the-bus/description/?envType=study-plan-v2&envId=top-sql-50)
+Using Window functions and then Filtering using Where.
+```sql
+-- Write your PostgreSQL query statement below
+WITH total AS (
+    SELECT
+        turn,
+        weight,
+        person_name,
+        SUM(weight) OVER(ORDER BY turn) AS running_sum
+    FROM
+        Queue
+)
+
+SELECT person_name
+FROM total
+WHERE running_sum = (SELECT MAX(running_sum) FROM total WHERE running_sum <=1000);
+```
+
+## 36. [Count Salary Categories](https://leetcode.com/problems/count-salary-categories/description/?envType=study-plan-v2&envId=top-sql-50)
+
+I know it's more complex than simple `UNION` statements, but i wanted a different solution!
+
+Using this Nested Query with `UNNEST`, `COALESCE` and `CTEs`.
+
+```sql
+WITH categories AS (
+    SELECT UNNEST(ARRAY['Low Salary', 'Average Salary', 'High Salary']) as category
+),
+counts AS (
+    SELECT 
+        category,
+        COUNT(*) AS count
+    FROM 
+        (
+            SELECT 
+                account_id,
+                CASE 
+                    WHEN income < 20000 THEN 'Low Salary'
+                    WHEN 20000 <= income AND income <= 50000 THEN 'Average Salary'
+                    ELSE 'High Salary'
+                END AS category
+            FROM 
+                Accounts
+        ) sub
+    GROUP BY 
+        category
+)
+
+-- Querying on them!
+SELECT 
+    c.category,
+    COALESCE(cnt.count, 0) AS accounts_count
+FROM 
+    categories c
+LEFT JOIN 
+    counts cnt
+ON c.category = cnt.category
+ORDER BY 
+    c.category;
+```
