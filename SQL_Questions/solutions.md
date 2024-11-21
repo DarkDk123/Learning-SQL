@@ -892,3 +892,95 @@ FROM
 ORDER BY
     id;
 ```
+
+## 39. [Movie Rating](https://leetcode.com/problems/movie-rating/description/?envType=study-plan-v2&envId=top-sql-50)
+
+**Solution 1:**
+
+Using `UNION ALL` to combine results from multiple queries, Joining & grouping to get the required results.
+
+```sql
+(
+    -- Most Active user
+    SELECT u.name as results
+    FROM MovieRating r JOIN Users u
+    ON r.user_id = u.user_id
+    GROUP BY u.user_id, u.name
+    ORDER BY COUNT(movie_id) DESC, u.name
+    LIMIT 1
+)
+
+UNION ALL
+
+(
+    -- Most Rated Movie
+    SELECT title AS results
+    FROM MovieRating r JOIN Movies m
+    ON r.movie_id = m.movie_id
+    WHERE TO_CHAR(created_at, 'YYYY-MM') = '2020-02'
+    GROUP BY m.movie_id, m.title
+    ORDER BY AVG(rating) DESC, title
+    LIMIT 1
+);
+```
+
+## 40. [Restaurant Growth](https://leetcode.com/problems/restaurant-growth/?envType=study-plan-v2&envId=top-sql-50)
+
+
+
+
+**Solution 1:** Using **subqueries** in **Select** statement as this section suggest solutions using subqueries.
+
+```sql
+-- Write your PostgreSQL query statement below
+WITH total AS (
+    SELECT
+        visited_on,
+        (
+            SELECT SUM(amount)
+            FROM Customer c2
+            WHERE c2.visited_on BETWEEN
+            c1.visited_on - 6 AND c1.visited_on
+        ) AS amount
+        
+    FROM Customer c1
+    WHERE visited_on >= (SELECT MIN(visited_on) + 6 FROM Customer)
+    GROUP BY visited_on
+)
+
+SELECT
+    visited_on,
+    amount,
+    ROUND(amount/7.0, 2) AS average_amount
+FROM
+    total
+ORDER BY
+    visited_on;
+```
+
+**Solution 2:** Using Window Functions, by defining specific windows.
+
+
+```sql 
+WITH aggregated AS (
+    SELECT
+        visited_on,
+        SUM(amount) OVER wnd AS amount,
+        DENSE_RANK() OVER wnd AS idx
+    FROM
+        Customer
+    -- Window on entire table
+    WINDOW wnd AS (
+            ORDER BY visited_on
+            RANGE BETWEEN '6 day' PRECEDING AND CURRENT ROW
+        )
+)
+
+SELECT DISTINCT
+    visited_on,
+    amount,
+    ROUND(amount/7::NUMERIC, 2) AS average_amount
+FROM aggregated
+WHERE idx > 6
+ORDER BY visited_on;
+```
