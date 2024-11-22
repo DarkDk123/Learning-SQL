@@ -984,3 +984,22 @@ FROM aggregated
 WHERE idx > 6
 ORDER BY visited_on;
 ```
+
+## 41. [Friend Requests II: Who Has the Most Friends](https://leetcode.com/problems/friend-requests-ii-who-has-the-most-friends/?envType=study-plan-v2&envId=top-sql-50)
+
+Counting all occurrences of id's in both ***requesting and accepting*** columns.
+
+```sql
+SELECT
+    id,
+    count(id) as num
+FROM 
+    (
+        select requester_id as id from RequestAccepted 
+        union all
+        select accepter_id as id from RequestAccepted
+    ) AS temp
+group by id
+order by num desc
+limit 1
+```
