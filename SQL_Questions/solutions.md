@@ -1085,3 +1085,114 @@ WHERE
         e2.salary >= e1.salary
     ) <= 3;
 ```
+
+### Questions on *Advanced String Functions / Regex / Clause*
+
+## 44. [Fix Names in a Table](https://leetcode.com/problems/fix-names-in-a-table/?envType=study-plan-v2&envId=top-sql-50)
+
+```sql
+SELECT
+    user_id,
+    CONCAT(
+        UPPER(SUBSTRING(name, 1, 1)), LOWER(SUBSTRING(name, 2))
+        -- UPPER(LEFT(name, 1)), LOWER(RIGHT(name, LENGTH(name)-1)) (Slower)
+    ) AS name
+FROM
+    USERS
+ORDER BY
+    user_id;
+```
+
+## 45. [Patients With a Condition](https://leetcode.com/problems/patients-with-a-condition/description/?envType=study-plan-v2&envId=top-sql-50)
+
+USING `LIKE` for simple pattern matching, we can also use `REGEXP` ***(Mysql)***  or `~` ***(PostgreSQL)*** \
+to match **regular expressions**.
+
+```sql
+SELECT
+    *
+FROM
+    Patients
+WHERE
+    conditions LIKE 'DIAB1%' OR -- first condition 
+    conditions LIKE '% DIAB1%'; -- any other condition starts with it...
+```
+
+## 46. [Delete Duplicate Emails](https://leetcode.com/problems/delete-duplicate-emails/?envType=study-plan-v2&envId=top-sql-50)
+
+Deleting from Person Table.
+
+```sql
+DELETE FROM Person
+WHERE id IN (
+    SELECT p2.id -- p2.id (Avoids MIN id)
+    FROM Person p1 JOIN Person p2
+    ON p1.email = p2.email AND
+    p1.id < p2.id
+);
+```
+
+## 47. [Second Highest Salary](https://leetcode.com/problems/second-highest-salary/?envType=study-plan-v2&envId=top-sql-50)
+
+Smaller than ***max*** salary is the ***2nd max salary***.
+
+```sql
+SELECT
+    MAX(salary) AS SecondHighestSalary
+FROM
+    Employee
+WHERE
+    salary < (SELECT MAX(salary) FROM Employee);
+```
+
+## 48. [Group Sold Products By The Date](https://leetcode.com/problems/group-sold-products-by-the-date/description/?envType=study-plan-v2&envId=top-sql-50)
+
+Grouping as obvious, but then using `STRING_AGG` function to aggregate all distinct products. \
+In MySQL, it's alternative is `GROUP_CONCAT`.
+
+```sql
+SELECT
+    sell_date,
+    COUNT(DISTINCT product) AS num_sold,
+    STRING_AGG(DISTINCT product, ',' ORDER BY product) AS products -- PgSQL
+FROM
+    Activities
+GROUP BY
+    sell_date
+ORDER BY
+    sell_date;
+```
+
+## 49. [List the Products Ordered in a Period](https://leetcode.com/problems/list-the-products-ordered-in-a-period/description/?envType=study-plan-v2&envId=top-sql-50)
+
+Using `To_CHAR` to extract date in a specific format. Then aggregating data on **groups of each product**. \
+There are different functions in different Databases, like MYSQL has DATE_FORMAT
+
+```sql
+SELECT
+    product_name,
+    SUM(unit) AS unit
+FROM
+    Products p JOIN Orders o
+    ON p.product_id = o.product_id
+WHERE
+    TO_CHAR(order_date, 'YYYY-MM') = '2020-02'
+GROUP BY
+    p.product_id, product_name
+HAVING
+    SUM(unit) >= 100;
+```
+
+
+## 50. [Find Users With Valid E-Mails](https://leetcode.com/problems/find-users-with-valid-e-mails/?envType=study-plan-v2&envId=top-sql-50)
+
+Using regex match in PostgreSQL, `~` will match for **case-sensitive RegEx patterns**.
+
+```sql
+SELECT
+    *
+FROM
+    Users
+WHERE
+    mail ~ '^[a-zA-Z][a-zA-Z0-9_.-]*@leetcode\.com$'
+```
