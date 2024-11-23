@@ -19,8 +19,8 @@ These are the SQL tutorials i have done in order, all the notes, exercises, scri
 ### 2. LeetCode SQL 50 Questions - [Tutorial](https://www.youtube.com/playlist?list=PL23dd-8zssJC0n4--rrdmbD4mROCcg5Uw) :
 
 - **Course Creator : [Arfin on YouTube](https://www.youtube.com/@StartPracticing)**
-- **Status** : [On Going](./SQL_Questions/)
-- **LeetCode Link** : [Link](https://leetcode.com/studyplan/top-sql-50/)
+- **Status** : [Completed ✅💪](./SQL_Questions/)
+- **LeetCode Exercises Link** : [Link](https://leetcode.com/studyplan/top-sql-50/)
 
 I had already solved many of these problems, just re-solving & documenting.
 
