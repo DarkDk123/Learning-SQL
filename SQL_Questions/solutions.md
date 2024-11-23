@@ -1003,3 +1003,56 @@ group by id
 order by num desc
 limit 1
 ```
+
+## 42. [Investments in 2016](https://leetcode.com/problems/investments-in-2016/?envType=study-plan-v2&envId=top-sql-50)
+
+Using subqueries for :
+
+- Getting `tiv_2015` that are same for **more than 1** policy holders.
+- Getting `lat, lon` that are unique & belongs to only one policy holder.
+
+Then filtering the policy holders who belong to the above data, and calculating final aggregated results.
+
+```sql
+-- Write your PostgreSQL query statement below
+SELECT
+    ROUND(
+        SUM(tiv_2016)::NUMERIC, 2
+    ) AS tiv_2016
+FROM
+    Insurance
+WHERE
+    tiv_2015 IN (
+        SELECT tiv_2015
+        FROM Insurance
+        GROUP BY tiv_2015
+        HAVING COUNT(pid) > 1
+
+    ) AND
+    (lat,lon) IN (
+        SELECT lat, lon
+        FROM Insurance
+        GROUP BY lat, lon
+        HAVING COUNT(*) = 1
+    )
+```
+
+## 43. [Department Top Three Salaries](https://leetcode.com/problems/department-top-three-salaries/description/?envType=study-plan-v2&envId=top-sql-50)
+
+```sql
+SELECT
+    department,
+    employee,
+    salary
+FROM (
+    SELECT
+        d.name AS department,
+        e.name AS employee,
+        e.salary AS salary,
+        dense_rank() OVER(PARTITION BY d.name ORDER BY e.salary DESC) AS ranks
+    FROM employee e 
+    LEFT JOIN department d
+    ON e.departmentId =d.id
+) AS temp
+WHERE ranks <=3
+```
