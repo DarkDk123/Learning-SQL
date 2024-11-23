@@ -1039,6 +1039,11 @@ WHERE
 
 ## 43. [Department Top Three Salaries](https://leetcode.com/problems/department-top-three-salaries/description/?envType=study-plan-v2&envId=top-sql-50)
 
+**Solution 1:**
+
+Using subquery to calculate `ranks` of the employees in their department based on salary, then \
+filtering out the employees **with top 3 salaries** in their relative **departments !**
+
 ```sql
 SELECT
     department,
@@ -1049,10 +1054,34 @@ FROM (
         d.name AS department,
         e.name AS employee,
         e.salary AS salary,
-        dense_rank() OVER(PARTITION BY d.name ORDER BY e.salary DESC) AS ranks
+        DENSE_RANK() OVER(PARTITION BY d.name ORDER BY e.salary DESC) AS ranks
     FROM employee e 
     LEFT JOIN department d
     ON e.departmentId =d.id
 ) AS temp
 WHERE ranks <=3
+```
+
+**Solution 2:**
+
+Here, writing a **correlated subquery**, that gives count of all **distinct salaries** greater than current \
+employee's salary in it's corresponding department.
+
+Then we can filter employees based on their salary position in the department !
+
+```sql
+SELECT
+    d.name AS Department,
+    e1.name as Employee,
+    salary
+FROM
+    Employee e1 JOIN Department d
+    ON e1.departmentId = d.id
+WHERE
+    (
+        SELECT COUNT(DISTINCT salary)
+        FROM Employee e2
+        WHERE e2.departmentId = d.id AND
+        e2.salary >= e1.salary
+    ) <= 3;
 ```
